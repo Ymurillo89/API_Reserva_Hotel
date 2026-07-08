@@ -38,6 +38,7 @@ namespace API_Hotel.Infrastructure.Repositories
             parametros.Add("@Id", id);
             return await connection.QuerySingleOrDefaultAsync<Hotel>("dbo.HotelSP_GestionHoteles",parametros,commandType: CommandType.StoredProcedure);
         }
+
         public async Task<int> InsertarHotelAsync(Hotel hotel)
         {
             using var connection = _context.CreateConnection();
@@ -51,6 +52,7 @@ namespace API_Hotel.Infrastructure.Repositories
             parametros.Add("@EstaHabilitado", hotel.EstaHabilitado);
             return await connection.ExecuteScalarAsync<int>("dbo.HotelSP_GestionHoteles",parametros,commandType: CommandType.StoredProcedure);
         }
+
         public async Task ActualizarHotelAsync(Hotel hotel)
         {
             using var connection = _context.CreateConnection();
@@ -76,6 +78,7 @@ namespace API_Hotel.Infrastructure.Repositories
             return await connection.QueryAsync<Habitacion>("dbo.HotelSP_GestionHoteles",parametros,commandType: CommandType.StoredProcedure);
 
         }
+
         public async Task<int> InsertarHabitacionAsync(Habitacion habitacion)
         {
             using var connection = _context.CreateConnection();
@@ -89,6 +92,52 @@ namespace API_Hotel.Infrastructure.Repositories
             parametros.Add("@Ubicacion", habitacion.Ubicacion);
             parametros.Add("@EstaHabilitado", habitacion.EstaHabilitada);
             return await connection.ExecuteScalarAsync<int>("dbo.HotelSP_GestionHoteles",parametros,commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task CambiarEstadoHotelAsync(int id, bool estaHabilitado)
+        {
+            using var connection = _context.CreateConnection();
+            var parametros = new DynamicParameters();
+            parametros.Add("@Opcion", "CambiarEstadoHotel");
+            parametros.Add("@Id", id);
+            parametros.Add("@EstaHabilitado", estaHabilitado);
+
+            await connection.ExecuteAsync("dbo.HotelSP_GestionHoteles", parametros, commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task EliminarHotelAsync(int id)
+        {
+            using var connection = _context.CreateConnection();
+            var parametros = new DynamicParameters();
+            parametros.Add("@Opcion", "EliminarHotel");
+            parametros.Add("@Id", id);
+
+            await connection.ExecuteAsync("dbo.HotelSP_GestionHoteles", parametros, commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task<Habitacion?> ObtenerHabitacionPorIdAsync(int id)
+        {
+            using var connection = _context.CreateConnection();
+            var parametros = new DynamicParameters();
+            parametros.Add("@Opcion", "ObtenerHabitacionPorId");
+            parametros.Add("@Id", id);
+
+            return await connection.QuerySingleOrDefaultAsync<Habitacion>("dbo.HotelSP_GestionHoteles", parametros, commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task ActualizarHabitacionAsync(Habitacion habitacion)
+        {
+            using var connection = _context.CreateConnection();
+            var parametros = new DynamicParameters();
+            parametros.Add("@Opcion", "ActualizarHabitacion");
+            parametros.Add("@Id", habitacion.Id);
+            parametros.Add("@TipoHabitacion", habitacion.TipoHabitacion);
+            parametros.Add("@CostoBase", habitacion.CostoBase);
+            parametros.Add("@Impuesto", habitacion.Impuesto);
+            parametros.Add("@Ubicacion", habitacion.Ubicacion);
+            parametros.Add("@EstaHabilitado", habitacion.EstaHabilitada);
+
+            await connection.ExecuteAsync("dbo.HotelSP_GestionHoteles", parametros, commandType: CommandType.StoredProcedure);
         }
     }
 }

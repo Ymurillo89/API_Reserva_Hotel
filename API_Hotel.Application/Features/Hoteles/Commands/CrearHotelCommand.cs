@@ -1,5 +1,4 @@
-﻿using API_Hotel.Application.DTOs;
-using API_Hotel.Domain.Entities;
+﻿using API_Hotel.Domain.Entities;
 using API_Hotel.Domain.Repositories;
 using MediatR;
 
@@ -32,3 +31,10 @@ public class CrearHotelCommandHandler : IRequestHandler<CrearHotelCommand, int>
         return nuevoId;
     }
 }
+
+public record CrearHotelCommand(
+     string Nombre,
+     string Ciudad,
+     string Direccion,
+     string? Descripcion
+    ) : IRequest<int>;

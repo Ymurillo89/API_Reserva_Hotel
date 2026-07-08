@@ -1,16 +1,57 @@
 using API_Hotel.Application;
-using API_Hotel.Infrastructure; // Ensure this namespace is correct and contains the AddInfrastructure extension method
+using API_Hotel.Infrastructure;
+using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Añadimos controladores y Swagger para probar visualmente
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
-// 2. CONECTAMOS NUESTRAS CAPAS (Clean Architecture)
+//CONFIGURAMOS SWAGGER CON BOTÓN CANDADO (AUTHORIZE)
+builder.Services.AddSwaggerGen(c =>
+{
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Ingresa tu token JWT en el formato: {tu_token}"
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
+var secret = builder.Configuration["Jwt:SecretKey"] ?? "SUPER_SECRET_KEY_FOR_JWT_API_HOTEL_2026_LEAD_DEV_LONG_KEY!!";
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "API_Hotel",
+            ValidAudience = builder.Configuration["Jwt:Audience"] ?? "API_Hotel_Clients",
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
+        };
+    });
+
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration); // Ensure AddInfrastructure is implemented in the Infrastructure namespace
+builder.Services.AddInfrastructure(builder.Configuration); 
 
 var app = builder.Build();
 
@@ -21,6 +62,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 

@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using TuProyecto.Application.DTOs;
 
 namespace API_Hotel.Application.Features.Hoteles.Queries
 {
@@ -34,3 +33,12 @@ namespace API_Hotel.Application.Features.Hoteles.Queries
         }
     }
 }
+
+public record HotelDto(
+    int Id,
+    string Nombre,
+    string Ciudad,
+    string Direccion,
+    string? Descripcion,
+    bool EstaHabilitado
+);
