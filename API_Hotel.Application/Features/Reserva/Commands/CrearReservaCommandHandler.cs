@@ -1,11 +1,13 @@
-﻿using API_Hotel.Application.DTOs;
+using API_Hotel.Application;
+using API_Hotel.Application.DTOs;
+using API_Hotel.Application.Events;
 using API_Hotel.Domain.Entities;
 using API_Hotel.Domain.Repositories;
 using Domain.Repositories;
 using MediatR;
 
 
-namespace TuProyecto.Application.Features.Reservas.Commands;
+namespace Application.Features.Reservas.Commands;
 
 public record CrearReservaCommand(
     int HotelId,
@@ -21,11 +23,13 @@ public class CrearReservaCommandHandler : IRequestHandler<CrearReservaCommand, i
 {
     private readonly IReservaRepository _reservaRepository;
     private readonly IHotelRepository _hotelRepository;
+    private readonly IEventPublisher _eventPublisher;
 
-    public CrearReservaCommandHandler(IReservaRepository reservaRepository, IHotelRepository hotelRepository)
+    public CrearReservaCommandHandler(IReservaRepository reservaRepository, IHotelRepository hotelRepository,IEventPublisher eventPublisher)
     {
         _reservaRepository = reservaRepository;
         _hotelRepository = hotelRepository;
+        _eventPublisher = eventPublisher;
     }
 
     public async Task<int> Handle(CrearReservaCommand request, CancellationToken cancellationToken)
@@ -89,6 +93,18 @@ public class CrearReservaCommandHandler : IRequestHandler<CrearReservaCommand, i
 
         int nuevaReservaId = await _reservaRepository.CrearReservaConHuespedesAsync(reserva);
 
+        var reservaEvent = new ReservaCreadaEvent
+        {
+            ReservaId = nuevaReservaId,
+            Mesaje = $"Se ha creado una nueva reserva con ID: {nuevaReservaId}",
+            FechaEntrada = request.FechaEntrada,
+            Correo = request.Huespedes.FirstOrDefault()?.Correo ?? "correo@prueba.com",
+            Nombres = request.Huespedes.FirstOrDefault()?.Nombres ?? "Huésped Principal",
+            HotelNombre = "Hotel Sistema"
+        };
+
+     
+        _eventPublisher.Publish(reservaEvent, "reserva_creada_queue");
         return nuevaReservaId;
     }
 }

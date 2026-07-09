@@ -3,7 +3,7 @@ using API_Hotel.Domain.Repositories;
 using MediatR;
 using System.Text.Json.Serialization;
 
-namespace TuProyecto.Application.Features.Hoteles.Commands;
+namespace Application.Features.Hoteles.Commands;
 
 public class ActualizarHotelCommandHandler : IRequestHandler<ActualizarHotelCommand, bool>
 {

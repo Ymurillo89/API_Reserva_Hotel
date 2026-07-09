@@ -9,7 +9,7 @@ using Dapper;
 using Domain.Repositories;
 
 
-namespace TuProyecto.Infrastructure.Repositories;
+namespace API_Hotel.Infrastructure.Infrastructure.Repositories;
 
 public class ReservaRepository : IReservaRepository
 {

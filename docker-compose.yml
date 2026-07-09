@@ -10,5 +10,42 @@ services:
     volumes:
       - sqlserver_data:/var/opt/mssql
 
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mi_hotel_api
+    ports:
+      - "8080:8080"
+    depends_on:
+      - sqlserver
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=API_HotelDB;User Id=sa;Password=SuperSecurePassword123!;TrustServerCertificate=True
+      - RabbitMQ__HostName=rabbitmq
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: mi_hotel_rabbitmq
+    ports:
+      - "5672:5672"   
+      - "15672:15672" 
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  notifications:
+    build:
+      context: .
+      dockerfile: API_Hotel.Notifications/Dockerfile
+    container_name: mi_hotel_notifications
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - RabbitMQ__HostName=rabbitmq
+
 volumes:
   sqlserver_data:

@@ -10,10 +10,12 @@
     <PackageReference Include="Dapper" Version="2.1.79" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.2" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.9" />
+    <PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.19.1" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\API_Hotel.Application\API_Hotel.Application.csproj" />
     <ProjectReference Include="..\API_Hotel.Domain\API_Hotel.Domain.csproj" />
   </ItemGroup>
 

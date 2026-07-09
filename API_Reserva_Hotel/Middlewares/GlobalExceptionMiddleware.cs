@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 
-namespace TuProyecto.API.Middlewares;
+namespace API.Middlewares;
 
 public class GlobalExceptionMiddleware
 {

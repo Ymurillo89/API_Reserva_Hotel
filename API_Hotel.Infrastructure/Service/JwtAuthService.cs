@@ -4,7 +4,7 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
-namespace TuProyecto.Infrastructure.Services; // <-- Ajusta a tu namespace
+namespace API_Hotel.Infrastructure.Infrastructure.Services; 
 
 public interface IJwtAuthService
 {

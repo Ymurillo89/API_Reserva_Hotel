@@ -4,12 +4,13 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using TuProyecto.Application.Features.Reservas.Commands;
-using TuProyecto.Application.Features.Reservas.Queries;
+using Application.Features.Reservas.Commands;
+
 using Microsoft.AspNetCore.Authorization;
 using API_Hotel.Application.DTOs;
+using Application.Features.Reservas.Queries;
 
-namespace TuProyecto.API.Controllers;
+namespace API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

@@ -1,9 +1,7 @@
 ﻿using API_Hotel.Domain.Repositories;
 using MediatR;
-namespace TuProyecto.Application.Features.Hoteles.Commands; 
+namespace Application.Features.Hoteles.Commands; 
 
-
-// 2. EL HANDLER: Ejecuta el cambio de estado directamente en 1 sola llamada a Dapper
 public class CambiarEstadoHotelCommandHandler : IRequestHandler<CambiarEstadoHotelCommand, bool>
 {
     private readonly IHotelRepository _repository;

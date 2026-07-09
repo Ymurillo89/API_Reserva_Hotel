@@ -3,7 +3,7 @@ using API_Hotel.Domain.Repositories;
 using MediatR;
 
 
-namespace TuProyecto.Application.Features.Hoteles.Commands;
+namespace Application.Features.Hoteles.Commands;
 
 public class CrearHotelCommandHandler : IRequestHandler<CrearHotelCommand, int>
 {

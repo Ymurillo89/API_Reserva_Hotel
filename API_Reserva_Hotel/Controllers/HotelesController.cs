@@ -6,10 +6,10 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Mvc;
-using TuProyecto.Application.Features.Hoteles.Commands;
-using TuProyecto.Application.Features.Reservas.Queries;
+using Application.Features.Hoteles.Commands;
+using Application.Features.Reservas.Queries;
 
-namespace TuProyecto.API.Controllers;
+namespace API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

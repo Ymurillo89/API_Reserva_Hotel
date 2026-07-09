@@ -4,7 +4,7 @@ using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using TuProyecto.API.Middlewares;
+using API.Middlewares;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -76,10 +76,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration); 
+builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 app.UseMiddleware<GlobalExceptionMiddleware>();
+
+// Inicializar esquema de base de datos SQL Server al arrancar
+using (var scope = app.Services.CreateScope())
+{
+    var initializer = scope.ServiceProvider.GetRequiredService<API_Hotel.Infrastructure.Data.DatabaseInitializer>();
+    await initializer.InitializeAsync();
+}
 
 if (app.Environment.IsDevelopment())
 {

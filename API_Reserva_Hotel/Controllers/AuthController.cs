@@ -1,7 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using TuProyecto.Infrastructure.Services;
-
-namespace TuProyecto.API.Controllers;
+﻿using API_Hotel.Infrastructure.Infrastructure.Services;
+using Microsoft.AspNetCore.Mvc;
+namespace API.Controllers;
 
 [ApiController]
 [Route("api/auth")]

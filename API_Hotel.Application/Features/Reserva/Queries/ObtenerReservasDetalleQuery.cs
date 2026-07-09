@@ -6,7 +6,7 @@ using API_Hotel.Application.DTOs;
 using Domain.Repositories;
 using MediatR;
 
-namespace TuProyecto.Application.Features.Reservas.Queries;
+namespace Application.Features.Reservas.Queries;
 
 
 public class ObtenerReservasDetalleQueryHandler : IRequestHandler<ObtenerReservasDetalleQuery, IEnumerable<ReservaDetalleDto>>
