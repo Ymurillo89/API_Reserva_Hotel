@@ -4,13 +4,15 @@ using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using TuProyecto.API.Middlewares;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-//CONFIGURAMOS SWAGGER CON BOTÓN CANDADO (AUTHORIZE)
+//(AUTHORIZE)
 builder.Services.AddSwaggerGen(c =>
 {
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -48,14 +50,37 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = builder.Configuration["Jwt:Audience"] ?? "API_Hotel_Clients",
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
         };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnChallenge = context =>
+            {              
+                context.HandleResponse();
+
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                context.Response.ContentType = "application/json";
+
+                var resultado = "{\n  \"Mensaje\": \"401 No Autorizado. Debes enviar un Token .\"\n}";
+
+                return context.Response.WriteAsync(resultado);
+            },
+
+            OnForbidden = context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                context.Response.ContentType = "application/json";
+                var resultado = "{\n  \"Mensaje\": \"403 Prohibido. Tu rol actual no tiene permisos suficientes para ejecutar esta acción.\"\n}";
+                return context.Response.WriteAsync(resultado);
+            }
+        };
     });
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration); 
 
 var app = builder.Build();
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
-// 3. Configuración de Middleware en desarrollo
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

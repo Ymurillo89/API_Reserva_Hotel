@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Text.Json;
 using System.Threading.Tasks;
 using API_Hotel.Domain.Entities;
 using API_Hotel.Infrastructure.Data;
@@ -28,7 +29,7 @@ public class ReservaRepository : IReservaRepository
         parametros.Add("@FechaEntrada", fechaEntrada);
         parametros.Add("@FechaSalida", fechaSalida);
 
-        var conteo = await connection.ExecuteScalarAsync<int>("dbo.HotelSP_GestionReservas", parametros, commandType: CommandType.StoredProcedure);
+        var conteo = await connection.ExecuteScalarAsync<int>("HotelSP_GestionReservas", parametros, commandType: CommandType.StoredProcedure);
         return conteo > 0;
     }
 
@@ -41,7 +42,7 @@ public class ReservaRepository : IReservaRepository
         parametros.Add("@FechaEntrada", fechaEntrada);
         parametros.Add("@FechaSalida", fechaSalida);
 
-        return await connection.QueryAsync<HabitacionDisponible>("dbo.HotelSP_GestionReservas", parametros, commandType: CommandType.StoredProcedure);
+        return await connection.QueryAsync<HabitacionDisponible>("HotelSP_GestionReservas", parametros, commandType: CommandType.StoredProcedure);
     }
 
     public async Task<int> CrearReservaConHuespedesAsync(Reserva reserva)
@@ -65,7 +66,7 @@ public class ReservaRepository : IReservaRepository
             paramReserva.Add("@ContactoEmergenciaNombre", reserva.ContactoEmergenciaNombre);
             paramReserva.Add("@ContactoEmergenciaTelefono", reserva.ContactoEmergenciaTelefono);
 
-            int reservaId = await connection.ExecuteScalarAsync<int>("dbo.HotelSP_GestionReservas", paramReserva, transaction, commandType: CommandType.StoredProcedure);
+            int reservaId = await connection.ExecuteScalarAsync<int>("HotelSP_GestionReservas", paramReserva, transaction, commandType: CommandType.StoredProcedure);
 
             foreach (var huesped in reserva.Huespedes)
             {
@@ -81,7 +82,7 @@ public class ReservaRepository : IReservaRepository
                 paramHuesped.Add("@Correo", huesped.Correo);
                 paramHuesped.Add("@Telefono", huesped.Telefono);
 
-                await connection.ExecuteScalarAsync<int>("dbo.HotelSP_GestionReservas", paramHuesped, transaction, commandType: CommandType.StoredProcedure);
+                await connection.ExecuteScalarAsync<int>("HotelSP_GestionReservas", paramHuesped, transaction, commandType: CommandType.StoredProcedure);
             }
 
             transaction.Commit();
@@ -92,5 +93,21 @@ public class ReservaRepository : IReservaRepository
             transaction.Rollback();
             throw;
         }
+    }
+
+    public async Task<IEnumerable<ReservaDetalle>> ObtenerReservasConDetallesAsync()
+    {
+        using var connection = _context.CreateConnection();
+        var parametros = new DynamicParameters();
+        parametros.Add("@Opcion", "ObtenerTodasLasReservasDetalle");
+
+        string jsonResult = await connection.ExecuteScalarAsync<string>("dbo.HotelSP_GestionReservas", parametros, commandType: CommandType.StoredProcedure);
+
+        if (string.IsNullOrEmpty(jsonResult))
+            return new List<ReservaDetalle>();
+
+        var opciones = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        return JsonSerializer.Deserialize<List<ReservaDetalle>>(jsonResult, opciones)
+               ?? new List<ReservaDetalle>();
     }
 }
