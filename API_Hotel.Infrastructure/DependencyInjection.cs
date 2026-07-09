@@ -1,8 +1,10 @@
 ﻿using API_Hotel.Domain.Repositories;
 using API_Hotel.Infrastructure.Data;
 using API_Hotel.Infrastructure.Repositories;
+using Domain.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using TuProyecto.Infrastructure.Repositories;
 using TuProyecto.Infrastructure.Services;
 
 namespace API_Hotel.Infrastructure
@@ -14,9 +16,7 @@ namespace API_Hotel.Infrastructure
             services.AddSingleton<DapperContext>();
             services.AddScoped<IHotelRepository, HotelRepository>();
             services.AddScoped<IJwtAuthService, JwtAuthService>();
-            //services.AddScoped<IHotelRepository, HotelRepository>();
-            //services.AddScoped<IBookingRepository, BookingRepository>();
-            //services.AddScoped<IEventPublisher, RabbitMQEventPublisher>();
+            services.AddScoped<IReservaRepository, ReservaRepository>();   
             return services;
         }
     }
