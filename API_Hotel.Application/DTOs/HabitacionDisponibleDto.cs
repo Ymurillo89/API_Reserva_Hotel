@@ -7,13 +7,14 @@ using System.Threading.Tasks;
 namespace API_Hotel.Application.DTOs
 {
     public record HabitacionDisponibleDto(
-        int HabitacionId, 
-        int HotelId, 
-        string NombreHotel, 
-        string Ciudad, 
-        string TipoHabitacion, 
-        decimal CostoBase, 
-        decimal Impuesto, 
-        string Ubicacion
+        int HabitacionId,
+        int HotelId,
+        string NombreHotel,
+        string Ciudad,
+        string TipoHabitacion,
+        decimal CostoBase,
+        decimal Impuesto,
+        string Ubicacion,
+        int Capacidad
     );
 }

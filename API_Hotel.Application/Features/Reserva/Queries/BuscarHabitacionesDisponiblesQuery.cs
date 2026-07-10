@@ -34,10 +34,10 @@ public class BuscarHabitacionesDisponiblesQueryHandler : IRequestHandler<BuscarH
         }
 
         // 2. Enviamos las fechas verdaderas (DateTime) al Repositorio
-        var disponibles = await _reservaRepository.BuscarHabitacionesDisponiblesAsync(request.Ciudad, request.FechaEntrada, request.FechaSalida);
+        var disponibles = await _reservaRepository.BuscarHabitacionesDisponiblesAsync(request.Ciudad, request.FechaEntrada, request.FechaSalida, request.CantidadHuespedes);
 
         return disponibles.Select(h => new HabitacionDisponibleDto(
-            h.HabitacionId, h.HotelId, h.NombreHotel, h.Ciudad, h.TipoHabitacion, h.CostoBase, h.Impuesto, h.Ubicacion
+            h.HabitacionId, h.HotelId, h.NombreHotel, h.Ciudad, h.TipoHabitacion, h.CostoBase, h.Impuesto, h.Ubicacion, h.Capacidad
         ));
     }
 }
@@ -45,5 +45,6 @@ public class BuscarHabitacionesDisponiblesQueryHandler : IRequestHandler<BuscarH
 public record BuscarHabitacionesDisponiblesQuery(
     string? Ciudad,
     string FechaEntrada,
-    string FechaSalida
+    string FechaSalida,
+    int? CantidadHuespedes
 ) : IRequest<IEnumerable<HabitacionDisponibleDto>>;

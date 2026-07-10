@@ -14,6 +14,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: api-final
     container_name: mi_hotel_api
     ports:
       - "8080:8080"
@@ -23,6 +24,13 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=API_HotelDB;User Id=sa;Password=SuperSecurePassword123!;TrustServerCertificate=True
       - RabbitMQ__HostName=rabbitmq
+      - Smtp__Server=smtp.gmail.com
+      - Smtp__Port=587
+      - Smtp__Username=murilloruiz91@gmail.com
+      - Smtp__Password=wgni qpop nxaz psta
+      - Smtp__FromEmail=murilloruiz91@gmail.com
+      - Smtp__FromName=Sistema de Reservas
+      - Smtp__UseTLS=true
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -39,13 +47,22 @@ services:
   notifications:
     build:
       context: .
-      dockerfile: API_Hotel.Notifications/Dockerfile
+      dockerfile: Dockerfile
+      target: notifications-final
     container_name: mi_hotel_notifications
     depends_on:
       rabbitmq:
         condition: service_healthy
     environment:
       - RabbitMQ__HostName=rabbitmq
+      - Smtp__Server=smtp.gmail.com
+      - Smtp__Port=587
+      - Smtp__Username=murilloruiz91@gmail.com
+      - Smtp__Password=wgni qpop nxaz psta
+      - Smtp__FromEmail=murilloruiz91@gmail.com
+      - Smtp__FromName=Sistema de Reservas
+      - Smtp__UseTLS=true
+
 
 volumes:
   sqlserver_data:

@@ -33,7 +33,7 @@ public class ReservaRepository : IReservaRepository
         return conteo > 0;
     }
 
-    public async Task<IEnumerable<HabitacionDisponible>> BuscarHabitacionesDisponiblesAsync(string? ciudad, string fechaEntrada, string fechaSalida)
+    public async Task<IEnumerable<HabitacionDisponible>> BuscarHabitacionesDisponiblesAsync(string? ciudad, string fechaEntrada, string fechaSalida, int? cantidadHuespedes = null)
     {
         using var connection = _context.CreateConnection();
         var parametros = new DynamicParameters();
@@ -41,6 +41,7 @@ public class ReservaRepository : IReservaRepository
         parametros.Add("@Ciudad", ciudad);
         parametros.Add("@FechaEntrada", fechaEntrada);
         parametros.Add("@FechaSalida", fechaSalida);
+        parametros.Add("@CantidadHuespedes", cantidadHuespedes);
 
         return await connection.QueryAsync<HabitacionDisponible>("HotelSP_GestionReservas", parametros, commandType: CommandType.StoredProcedure);
     }

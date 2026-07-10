@@ -93,17 +93,25 @@ public class CrearReservaCommandHandler : IRequestHandler<CrearReservaCommand, i
 
         int nuevaReservaId = await _reservaRepository.CrearReservaConHuespedesAsync(reserva);
 
+        var hotel = await _hotelRepository.ObtenerPorIdAsync(request.HotelId);
+        var primerHuesped = request.Huespedes.FirstOrDefault();
+
         var reservaEvent = new ReservaCreadaEvent
         {
             ReservaId = nuevaReservaId,
             Mesaje = $"Se ha creado una nueva reserva con ID: {nuevaReservaId}",
             FechaEntrada = request.FechaEntrada,
-            Correo = request.Huespedes.FirstOrDefault()?.Correo ?? "correo@prueba.com",
-            Nombres = request.Huespedes.FirstOrDefault()?.Nombres ?? "Huésped Principal",
-            HotelNombre = "Hotel Sistema"
+            FechaSalida = request.FechaSalida,
+            Correo = primerHuesped?.Correo ?? "correo@prueba.com",
+            Nombres = primerHuesped?.Nombres ?? "Huésped Principal",
+            HotelNombre = hotel?.Nombre ?? "Hotel Sistema",
+            TipoHabitacion = habitacion.TipoHabitacion,
+            CostoTotal = costoTotal,
+            ImpuestoTotal = impuestoTotal,
+            CorreoAgente = "agente@hotelsistema.com",
+            CantidadHuespedes = request.Huespedes.Count
         };
 
-     
         _eventPublisher.Publish(reservaEvent, "reserva_creada_queue");
         return nuevaReservaId;
     }

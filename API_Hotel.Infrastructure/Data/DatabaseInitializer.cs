@@ -22,17 +22,15 @@ public class DatabaseInitializer
 
         var builder = new SqlConnectionStringBuilder(connectionString)
         {
-            InitialCatalog = "master" // Nos conectamos a master primero para crear la DB
+            InitialCatalog = "master"
         };
         var masterConnectionString = builder.ConnectionString;
 
-        // Intentamos 10 veces (útil para Docker, ya que el SQL tarda unos segundos en prender)
         int retries = 10;
         while (retries > 0)
         {
             try
             {
-                // 1. CREAR LA BASE DE DATOS
                 using (var masterConn = new SqlConnection(masterConnectionString))
                 {
                     await masterConn.OpenAsync();
@@ -41,14 +39,13 @@ public class DatabaseInitializer
                     BEGIN
                         CREATE DATABASE API_HotelDB;
                     END";
-                                        await masterConn.ExecuteAsync(createDbSql);
-                                    }
+                    await masterConn.ExecuteAsync(createDbSql);
+                }
 
-                                    // 2. CREAR LAS TABLAS
-                                    using var connection = new SqlConnection(connectionString);
-                                    await connection.OpenAsync();
+                using var connection = new SqlConnection(connectionString);
+                await connection.OpenAsync();
 
-                                    var schemaSql = @"
+                var schemaSql = @"
                     IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Hot_tblHoteles' AND xtype='U')
                     BEGIN
                         CREATE TABLE Hot_tblHoteles (
@@ -72,9 +69,17 @@ public class DatabaseInitializer
                             CostoBase DECIMAL(18,2) NOT NULL,
                             Impuesto DECIMAL(18,2) NOT NULL,
                             Ubicacion NVARCHAR(150) NULL,
+                            Capacidad INT NOT NULL DEFAULT 1,
                             EstaHabilitada BIT NOT NULL DEFAULT 1,
                             CONSTRAINT FK_Habitaciones_Hoteles FOREIGN KEY (HotelId) REFERENCES Hot_tblHoteles(Id)
                         );
+                    END
+                    ELSE
+                    BEGIN
+                        IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Hot_tblHabitaciones' AND COLUMN_NAME = 'Capacidad')
+                        BEGIN
+                            ALTER TABLE Hot_tblHabitaciones ADD Capacidad INT NOT NULL DEFAULT 1;
+                        END
                     END
 
                     IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Hot_tblReservas' AND xtype='U')
@@ -114,27 +119,23 @@ public class DatabaseInitializer
                         );
                     END
 
-                    -- ================= DATOS SEMILLA (SEED DATA) =================
                     IF NOT EXISTS (SELECT 1 FROM Hot_tblHoteles)
                     BEGIN
                         INSERT INTO Hot_tblHoteles (Nombre, Ciudad, Direccion, Descripcion, EstaHabilitado, EstaEliminado, FechaCreacion)
-                        VALUES 
+                        VALUES
                         ('Hotel Bogota Plaza', 'Bogota', 'Calle 100 # 18A-30', 'Hotel ejecutivo de lujo', 1, 0, GETUTCDATE()),
                         ('Cartagena Beach Resort', 'Cartagena', 'Bocagrande, Carrera 1', 'Resort frente al mar con todo incluido', 1, 0, GETUTCDATE());
-                        
-                        -- Habitaciones para el Hotel 1 (Bogotá)
-                        INSERT INTO Hot_tblHabitaciones (HotelId, TipoHabitacion, CostoBase, Impuesto, Ubicacion, EstaHabilitada)
-                        VALUES 
-                        (1, 'Sencilla', 150000, 28500, 'Piso 2 - Vista interior', 1),
-                        (1, 'Doble', 250000, 47500, 'Piso 3 - Vista a la calle', 1);
 
-                        -- Habitaciones para el Hotel 2 (Cartagena)
-                        INSERT INTO Hot_tblHabitaciones (HotelId, TipoHabitacion, CostoBase, Impuesto, Ubicacion, EstaHabilitada)
-                        VALUES 
-                        (2, 'Suite Presidencial', 850000, 161500, 'Penthouse - Vista al mar', 1);
+                        INSERT INTO Hot_tblHabitaciones (HotelId, TipoHabitacion, CostoBase, Impuesto, Ubicacion, Capacidad, EstaHabilitada)
+                        VALUES
+                        (1, 'Sencilla', 150000, 28500, 'Piso 2 - Vista interior', 1, 1),
+                        (1, 'Doble', 250000, 47500, 'Piso 3 - Vista a la calle', 2, 1);
+
+                        INSERT INTO Hot_tblHabitaciones (HotelId, TipoHabitacion, CostoBase, Impuesto, Ubicacion, Capacidad, EstaHabilitada)
+                        VALUES
+                        (2, 'Suite Presidencial', 850000, 161500, 'Penthouse - Vista al mar', 4, 1);
                     END
                     ";
-
 
                 await connection.ExecuteAsync(schemaSql);
 
@@ -156,78 +157,76 @@ public class DatabaseInitializer
                 BEGIN
                     SET NOCOUNT ON;
 
-                    -- ================= HOTELES =================
                     IF @Opcion = 'ObtenerTodosActivos'
-		                BEGIN
-			                SELECT * FROM Hot_tblHoteles WHERE EstaEliminado = 0;
-		                END
+                    BEGIN
+                        SELECT * FROM Hot_tblHoteles WHERE EstaEliminado = 0;
+                    END
 
                     IF @Opcion = 'ObtenerPorId'
-		                BEGIN
-			                SELECT * FROM Hot_tblHoteles WHERE Id = @Id AND EstaEliminado = 0;
-		                END
+                    BEGIN
+                        SELECT * FROM Hot_tblHoteles WHERE Id = @Id AND EstaEliminado = 0;
+                    END
 
                     IF @Opcion = 'InsertarHotel'
-		                BEGIN
-			                INSERT INTO Hot_tblHoteles (Nombre, Ciudad, Direccion, Descripcion, EstaHabilitado, EstaEliminado, FechaCreacion)
-			                VALUES (@Nombre, @Ciudad, @Direccion, @Descripcion, ISNULL(@EstaHabilitado, 1), 0, GETUTCDATE());
-			                SELECT CAST(SCOPE_IDENTITY() AS INT) AS NuevoId;
-		                END
+                    BEGIN
+                        INSERT INTO Hot_tblHoteles (Nombre, Ciudad, Direccion, Descripcion, EstaHabilitado, EstaEliminado, FechaCreacion)
+                        VALUES (@Nombre, @Ciudad, @Direccion, @Descripcion, ISNULL(@EstaHabilitado, 1), 0, GETUTCDATE());
+                        SELECT CAST(SCOPE_IDENTITY() AS INT) AS NuevoId;
+                    END
 
                     IF @Opcion = 'ActualizarHotel'
-		                BEGIN
-			                UPDATE Hot_tblHoteles
-			                SET Nombre = ISNULL(@Nombre, Nombre),
-				                Ciudad = ISNULL(@Ciudad, Ciudad),
-				                Direccion = ISNULL(@Direccion, Direccion),
-				                Descripcion = ISNULL(@Descripcion, Descripcion)
-			                WHERE Id = @Id AND EstaEliminado = 0;
-		                END
+                    BEGIN
+                        UPDATE Hot_tblHoteles
+                        SET Nombre = ISNULL(@Nombre, Nombre),
+                            Ciudad = ISNULL(@Ciudad, Ciudad),
+                            Direccion = ISNULL(@Direccion, Direccion),
+                            Descripcion = ISNULL(@Descripcion, Descripcion)
+                        WHERE Id = @Id AND EstaEliminado = 0;
+                    END
 
                     IF @Opcion = 'CambiarEstadoHotel'
-		                BEGIN
-			                UPDATE Hot_tblHoteles SET EstaHabilitado = @EstaHabilitado WHERE Id = @Id AND EstaEliminado = 0;
-		                END
+                    BEGIN
+                        UPDATE Hot_tblHoteles SET EstaHabilitado = @EstaHabilitado WHERE Id = @Id AND EstaEliminado = 0;
+                    END
 
                     IF @Opcion = 'EliminarHotel'
-		                BEGIN
-			                UPDATE Hot_tblHoteles SET EstaEliminado = 1 WHERE Id = @Id;
-		                END
+                    BEGIN
+                        UPDATE Hot_tblHoteles SET EstaEliminado = 1 WHERE Id = @Id;
+                    END
 
-                    -- ================= HABITACIONES =================
                     IF @Opcion = 'ObtenerHabitacionesPorHotelId'
-		                BEGIN
-			                SELECT * FROM Hot_tblHabitaciones WHERE HotelId = @HotelId;
-		                END
+                    BEGIN
+                        SELECT * FROM Hot_tblHabitaciones WHERE HotelId = @HotelId;
+                    END
 
                     IF @Opcion = 'ObtenerHabitacionPorId'
-		                BEGIN
-			                SELECT * FROM Hot_tblHabitaciones WHERE Id = @Id;
-		                END
+                    BEGIN
+                        SELECT * FROM Hot_tblHabitaciones WHERE Id = @Id;
+                    END
 
                     IF @Opcion = 'InsertarHabitacion'
-		                BEGIN
-			                INSERT INTO Hot_tblHabitaciones (HotelId, TipoHabitacion, CostoBase, Impuesto, Ubicacion, EstaHabilitada)
-			                VALUES (@HotelId, @TipoHabitacion, @CostoBase, @Impuesto, @Ubicacion, ISNULL(@EstaHabilitado, 1));
-			                SELECT CAST(SCOPE_IDENTITY() AS INT) AS NuevoId;
-		                END
+                    BEGIN
+                        INSERT INTO Hot_tblHabitaciones (HotelId, TipoHabitacion, CostoBase, Impuesto, Ubicacion, EstaHabilitada)
+                        VALUES (@HotelId, @TipoHabitacion, @CostoBase, @Impuesto, @Ubicacion, ISNULL(@EstaHabilitado, 1));
+                        SELECT CAST(SCOPE_IDENTITY() AS INT) AS NuevoId;
+                    END
 
                     IF @Opcion = 'ActualizarHabitacion'
-		                BEGIN
-			                UPDATE Hot_tblHabitaciones
-			                SET TipoHabitacion = ISNULL(@TipoHabitacion, TipoHabitacion),
-				                CostoBase = ISNULL(@CostoBase, CostoBase),
-				                Impuesto = ISNULL(@Impuesto, Impuesto),
-				                Ubicacion = ISNULL(@Ubicacion, Ubicacion),
-				                EstaHabilitada = ISNULL(@EstaHabilitado, EstaHabilitada)
-			                WHERE Id = @Id AND HotelId = @HotelId;
-		                END
+                    BEGIN
+                        UPDATE Hot_tblHabitaciones
+                        SET TipoHabitacion = ISNULL(@TipoHabitacion, TipoHabitacion),
+                            CostoBase = ISNULL(@CostoBase, CostoBase),
+                            Impuesto = ISNULL(@Impuesto, Impuesto),
+                            Ubicacion = ISNULL(@Ubicacion, Ubicacion),
+                            EstaHabilitada = ISNULL(@EstaHabilitado, EstaHabilitada)
+                        WHERE Id = @Id AND HotelId = @HotelId;
+                    END
                 END
                 ";
-                                await connection.ExecuteAsync(scriptSpHoteles);
+                await connection.ExecuteAsync(scriptSpHoteles);
 
                 var scriptSpReservas = @"
-                    CREATE OR ALTER   PROCEDURE [dbo].[HotelSP_GestionReservas]
+                    CREATE OR ALTER PROCEDURE [dbo].[HotelSP_GestionReservas]
                         @Opcion VARCHAR(50) = '',
                         @ReservaId INT = NULL,
                         @HotelId INT = NULL,
@@ -253,55 +252,55 @@ public class DatabaseInitializer
                     BEGIN
                         SET NOCOUNT ON;
 
-                        -- 1. Buscar Habitaciones Disponibles
                         IF (@Opcion = 'BuscarHabitacionesDisponibles')
-		                    BEGIN
-			                    SELECT r.Id, r.HotelId, h.Nombre AS NombreHotel, h.Ciudad, r.TipoHabitacion, r.CostoBase, r.Impuesto, r.Ubicacion
-			                    FROM Hot_tblHabitaciones r WITH (NOLOCK)
-			                    INNER JOIN Hot_tblHoteles h WITH (NOLOCK) ON h.Id = r.HotelId
-			                    WHERE (@Ciudad IS NULL OR h.Ciudad = @Ciudad)
-			                      AND h.EstaHabilitado = 1
-			                      AND h.EstaEliminado = 0
-			                      AND r.EstaHabilitada = 1
-			                      AND NOT EXISTS (
-				                      SELECT 1 FROM Hot_tblReservas b WITH (NOLOCK)
-				                      WHERE b.HabitacionId = r.Id
-			                      AND b.Estado = 'Confirmada'
-					                    AND b.FechaEntrada < @FechaSalida
-					                    AND b.FechaSalida > @FechaEntrada
-			                      );
-		                    END
+                        BEGIN
+                            SELECT r.Id, r.HotelId, h.Nombre AS NombreHotel, h.Ciudad, r.TipoHabitacion, r.CostoBase, r.Impuesto, r.Ubicacion, r.Capacidad
+                            FROM Hot_tblHabitaciones r WITH (NOLOCK)
+                            INNER JOIN Hot_tblHoteles h WITH (NOLOCK) ON h.Id = r.HotelId
+                            WHERE (@Ciudad IS NULL OR h.Ciudad = @Ciudad)
+                              AND h.EstaHabilitado = 1
+                              AND h.EstaEliminado = 0
+                              AND r.EstaHabilitada = 1
+                              AND (@CantidadHuespedes IS NULL OR r.Capacidad >= @CantidadHuespedes)
+                              AND NOT EXISTS (
+                                  SELECT 1 FROM Hot_tblReservas b WITH (NOLOCK)
+                                  WHERE b.HabitacionId = r.Id
+                              AND b.Estado = 'Confirmada'
+                                    AND b.FechaEntrada < @FechaSalida
+                                    AND b.FechaSalida > @FechaEntrada
+                              );
+                        END
 
                         IF (@Opcion = 'VerificarSolapamiento')
-		                    BEGIN
-			                    SELECT COUNT(1)
-			                    FROM Hot_tblReservas WITH (NOLOCK)
-			                    WHERE HabitacionId = @HabitacionId
-			                      AND Estado  = 'Confirmada'
-			                      AND FechaEntrada < @FechaSalida
-			                      AND FechaSalida > @FechaEntrada;
-		                    END
+                        BEGIN
+                            SELECT COUNT(1)
+                            FROM Hot_tblReservas WITH (NOLOCK)
+                            WHERE HabitacionId = @HabitacionId
+                              AND Estado  = 'Confirmada'
+                              AND FechaEntrada < @FechaSalida
+                              AND FechaSalida > @FechaEntrada;
+                        END
 
                         IF (@Opcion = 'InsertarReserva')
                         BEGIN
                             INSERT INTO Hot_tblReservas (HotelId, HabitacionId, FechaEntrada, FechaSalida, CantidadHuespedes, CostoTotal, ImpuestoTotal, Estado, ContactoEmergenciaNombre, ContactoEmergenciaTelefono, FechaCreacion)
                             VALUES (@HotelId, @HabitacionId, @FechaEntrada, @FechaSalida, @CantidadHuespedes, @CostoTotal, @ImpuestoTotal, ISNULL(@Estado, 'Pendiente'), @ContactoEmergenciaNombre, @ContactoEmergenciaTelefono, GETUTCDATE());
-        
+
                             SELECT CAST(SCOPE_IDENTITY() AS INT);
                         END
 
                         IF (@Opcion = 'InsertarHuesped')
-		                    BEGIN
-			                    INSERT INTO Hot_tblHuespedes (ReservaId, Nombres, Apellidos, FechaNacimiento, Genero, TipoDocumento, NumeroDocumento, Correo, Telefono)
-			                    VALUES (@ReservaId, @Nombres, @Apellidos, @FechaNacimiento, @Genero, @TipoDocumento, @NumeroDocumento, @Correo, @Telefono);
-        
-			                    SELECT CAST(SCOPE_IDENTITY() AS INT);
-		                    END
+                        BEGIN
+                            INSERT INTO Hot_tblHuespedes (ReservaId, Nombres, Apellidos, FechaNacimiento, Genero, TipoDocumento, NumeroDocumento, Correo, Telefono)
+                            VALUES (@ReservaId, @Nombres, @Apellidos, @FechaNacimiento, @Genero, @TipoDocumento, @NumeroDocumento, @Correo, @Telefono);
+
+                            SELECT CAST(SCOPE_IDENTITY() AS INT);
+                        END
 
                         IF (@Opcion = 'ObtenerTodasLasReservasDetalle')
                         BEGIN
                             SELECT (
-                                SELECT 
+                                SELECT
                                     r.Id AS ReservaId,
                                     h.Nombre AS NombreHotel,
                                     hab.TipoHabitacion,
@@ -327,9 +326,7 @@ public class DatabaseInitializer
                     END
 
                 ";
-                                await connection.ExecuteAsync(scriptSpReservas);
-                // IMPORTANTE: Aquí puedes concatenar y ejecutar tus Scripts de los SPs (HotelSP_GestionHoteles y HotelSP_GestionReservas)
-                // de la misma manera usando connection.ExecuteAsync(tuScriptSP);
+                await connection.ExecuteAsync(scriptSpReservas);
 
                 _logger.LogInformation("Base de datos inicializada correctamente por Dapper.");
                 break;
@@ -343,7 +340,7 @@ public class DatabaseInitializer
                 }
                 else
                 {
-                    await Task.Delay(2000); // Esperamos 2 segundos antes de reintentar
+                    await Task.Delay(2000);
                 }
             }
         }

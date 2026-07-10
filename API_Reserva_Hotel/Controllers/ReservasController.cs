@@ -26,11 +26,11 @@ public class ReservasController : ControllerBase
 
     [HttpGet("buscar")]
     [ProducesResponseType(typeof(IEnumerable<HabitacionDisponibleDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> BuscarHabitaciones([FromQuery] string? ciudad,[FromQuery] string fechaEntrada,[FromQuery] string fechaSalida)
+    public async Task<IActionResult> BuscarHabitaciones([FromQuery] string? ciudad, [FromQuery] string fechaEntrada, [FromQuery] string fechaSalida, [FromQuery] int? cantidadHuespedes)
     {
         try
         {
-            var query = new BuscarHabitacionesDisponiblesQuery(ciudad, fechaEntrada, fechaSalida);
+            var query = new BuscarHabitacionesDisponiblesQuery(ciudad, fechaEntrada, fechaSalida, cantidadHuespedes);
             var resultado = await _mediator.Send(query);
             return Ok(resultado);
         }
