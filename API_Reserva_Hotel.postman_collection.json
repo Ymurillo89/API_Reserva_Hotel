@@ -1,0 +1,238 @@
+{
+  "info": {
+    "name": "API Reserva Hotel",
+    "description": "Colección de pruebas para los flujos principales del sistema de reserva de hoteles",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login - Agente",
+          "event": [
+            {
+              "listen": "tests",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set(\"token\", jsonData.token);",
+                  "pm.test(\"Login exitoso\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(jsonData.token).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"agente@hotel.com\", \"password\": \"Agent123!\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login - Viajero",
+          "event": [
+            {
+              "listen": "tests",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set(\"token_viajero\", jsonData.token);",
+                  "pm.test(\"Login viajero exitoso\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"viajero@email.com\", \"password\": \"Viajero123!\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Hoteles",
+      "item": [
+        {
+          "name": "Listar Hoteles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/hoteles",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hoteles"]
+            }
+          }
+        },
+        {
+          "name": "Crear Hotel",
+          "event": [
+            {
+              "listen": "tests",
+              "script": {
+                "exec": [
+                  "pm.test(\"Hotel creado\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\": \"Hotel Test\", \"ciudad\": \"Bogotá\", \"direccion\": \"Calle 123\", \"telefono\": \"3001234567\", \"email\": \"hotel@test.com\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hoteles",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hoteles"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reservas",
+      "item": [
+        {
+          "name": "Buscar Habitaciones Disponibles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_viajero}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reservas/buscar?ciudad=Bogotá&fechaEntrada=2026-08-01&fechaSalida=2026-08-05&cantidadHuespedes=2",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reservas", "buscar"],
+              "query": [
+                {
+                  "key": "ciudad",
+                  "value": "Bogotá"
+                },
+                {
+                  "key": "fechaEntrada",
+                  "value": "2026-08-01"
+                },
+                {
+                  "key": "fechaSalida",
+                  "value": "2026-08-05"
+                },
+                {
+                  "key": "cantidadHuespedes",
+                  "value": "2"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear Reserva",
+          "event": [
+            {
+              "listen": "tests",
+              "script": {
+                "exec": [
+                  "pm.test(\"Reserva creada exitosamente\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_viajero}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"habitacionId\": 1, \"fechaEntrada\": \"2026-08-01\", \"fechaSalida\": \"2026-08-05\", \"cantidadHuespedes\": 2, \"huespedes\": [{\"nombre\": \"Juan Pérez\", \"email\": \"juan@email.com\", \"telefono\": \"3001234567\", \"documento\": \"1234567890\"}], \"contactoEmergencia\": {\"nombre\": \"María Pérez\", \"telefono\": \"3009876543\"}}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/reservas",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reservas"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "token_viajero",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

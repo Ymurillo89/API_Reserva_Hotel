@@ -395,11 +395,12 @@ Ver [API-SPEC.md](docs/api-spec.md) para documentación completa.
 
 ## 🤖 Uso de IA en Desarrollo
 
-### **Gemini y Claude**
+### **Claude AI y Gemini**
 
 **Casos de uso:**
 - Implementación de SmtpEmailService (MailKit + SMTP)
 - Configuración Docker & docker-compose.yml
+- Ayuda en la redacción del README.md
 
 **Validación de salida:**
 - ✅ Revisión manual de lógica crítica
@@ -428,6 +429,35 @@ Almacena especificaciones y decisiones arquitectónicas:
 - **AI-RULES.md** → Guía de trabajo para IA
 - **API-SPEC.md** → Endpoints y especificación API
 - **DATABASE.md** → Schema y stored procedures
+
+---
+
+## 📮 Colección Postman
+
+Archivo de pruebas para todos los flujos principales: **`API_Reserva_Hotel.postman_collection.json`**
+
+### Cómo usar:
+
+1. **Descargar Postman**: https://www.postman.com/downloads/
+2. **Importar colección**:
+   - File → Import
+   - Seleccionar `API_Reserva_Hotel.postman_collection.json`
+3. **Configurar variables**:
+   - `base_url`: http://localhost:8080 (o tu URL)
+4. **Ejecutar flujos**:
+   - Auth → Login
+   - Hoteles → Listar/Crear
+   - Reservas → Buscar → Crear
+
+### Flujos incluidos:
+
+| Flujo | Requests |
+|-------|----------|
+| **Auth** | Login Agente, Login Viajero |
+| **Hoteles** | Listar, Crear |
+| **Reservas** | Buscar disponibles, Crear reserva |
+
+**Nota**: Los tokens se guardan automáticamente en variables después del login.
 
 ---
 
