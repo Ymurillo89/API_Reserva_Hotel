@@ -181,7 +181,7 @@ git clone <repo>
 cd API_Reserva_Hotel
 
 # 2. Ejecutar docker-compose
-docker-compose up
+docker compose up -d --build
 
 # 3. Esperar a que todos los servicios estén listos (~30 segundos)
 ```
