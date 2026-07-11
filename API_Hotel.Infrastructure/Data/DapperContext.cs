@@ -17,13 +17,9 @@ namespace API_Hotel.Infrastructure.Data
         public DapperContext(IConfiguration configuration)
         {
             _configuration = configuration;
-
-            // Busca en appsettings.json la clave "DefaultConnection". 
-            // Si no la encuentra, usa la de localhost por defecto:
+   
             _connectionString = _configuration.GetConnectionString("DefaultConnection")
                 ?? "Server=localhost,1433;Database=API_HotelDB;User Id=sa;Password=SuperSecurePassword123!;TrustServerCertificate=True;";
-
-
         }
 
         public IDbConnection CreateConnection()=> new SqlConnection(_connectionString);
