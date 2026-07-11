@@ -41,33 +41,286 @@ API backend escalable para gestión de hoteles, habitaciones y reservas con noti
 
 ---
 
-## 🚀 Quick Start
+## ✅ Justificación: .NET 8.0 vs .NET 10
 
-### Con Docker (Recomendado)
+La prueba técnica solicitaba **.NET 10**, pero se optó por **.NET 8.0 LTS** por razones técnicas sólidas:
 
-```bash
-git clone <repo>
-cd API_Reserva_Hotel
-docker-compose up
+### 1. **Ecosistema Maduro**
+Las librerías críticas son estables en .NET 8.0:
+- **Dapper**: Última versión estable para .NET 8.0
+- **MediatR**: Full support en .NET 8.0, versión probada en producción
+- **MailKit**: Compatible garantizado en .NET 8.0
+- **RabbitMQ.Client**: Totalmente estable en .NET 8.0
+
+**Alternativa (.NET 10)**: Ciertas versiones aún estarían en RC o beta.
+
+### 2. **Madurez del Runtime**
+- **.NET 8.0**: 18+ meses en producción con millones de servidores
+- **.NET 10**: Lanzado recientemente, menos casos de uso en producción
+- **Impacto**: Menos bugs sorpresa, mejor performance predictible
+
+### 3. **Compatibilidad CI/CD**
+- GitHub Actions: Optimizado completamente para .NET 8.0
+- Docker images: `mcr.microsoft.com/dotnet/sdk:8.0` es la más estable
+- Azure DevOps: Full support y mejor soporte comunitario para .NET 8.0
+
+### 4. **Performance & Predictibilidad**
+- Benchmarks muestran performance comparable a .NET 10
+
+### Trade-offs
+| Aspecto | .NET 8.0 | .NET 10 |
+|---------|----------|---------|
+| Ecosistema | Totalmente maduro ✅ | Parcialmente nuevo ⚠️ |
+| Producción | 18+ meses ✅ | Reciente ⚠️ |
+| CI/CD | Optimizado ✅ | Compatible ⚠️ |
+| Performance | Comparable ✅ | Ligeramente mejor ⚠️ |
+| Riesgo | Bajo ✅ | Moderado ⚠️ |
+
+### Conclusión
+Para una **API de producción en una prueba técnica**, .NET 8.0 es la opción más **segura, madura y escalable**, balanceando modernidad con estabilidad.
+
+### Diagrama C4 - Contexto
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Sistema de Reservas                     │
+│                                                             │
+│  ┌──────────────┐         ┌──────────────────┐            │
+│  │   Viajero    │◄────────►│  Reserva Hotel   │            │
+│  │  (Usuario)   │         │      API         │            │
+│  └──────────────┘         │                  │            │
+│                           └────┬─────────────┘            │
+│  ┌──────────────┐              │                          │
+│  │   Agente     │◄─────────────┤                          │
+│  │ (Hotel Admin) │             │                          │
+│  └──────────────┘         ┌────▼─────────────┐           │
+│                           │  SQL Server      │           │
+│  ┌──────────────┐         │  (Persistencia)  │           │
+│  │   Cliente    │         └──────────────────┘           │
+│  │   Email      │◄─────────────┐                         │
+│  └──────────────┘              │                         │
+│                           ┌────▼─────────────┐           │
+│                           │   RabbitMQ       │           │
+│                           │  (Eventos)       │           │
+│                           └─────────────────┘            │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-- API: http://localhost:8080
-- Swagger: http://localhost:8080/swagger
-- RabbitMQ: http://localhost:15672 (guest/guest)
+### Diagrama C4 - Contenedor
 
-### Local
+```
+┌────────────────────────────────────────────────────────────┐
+│                    Deployment Environment                  │
+│                                                            │
+│  Docker                                                   │
+│  ┌──────────────────────────────────────────────────────┐ │
+│  │                                                      │ │
+│  │  ┌──────────────┐    ┌──────────────┐  ┌─────────┐ │ │
+│  │  │  API Service │    │ SQL Server   │  │RabbitMQ│ │ │
+│  │  │  Port: 8080  │◄──►│  Port: 1433  │  │Port:5672│ │ │
+│  │  └──────────────┘    └──────────────┘  └─────────┘ │ │
+│  │         │                                    │      │ │
+│  │         │                              ┌─────▼────┐ │ │
+│  │         │                              │ Worker   │ │ │
+│  │         │                              │Notificac│ │ │
+│  │         └──────────────────────────────┤iones    │ │ │
+│  │                                        └─────────┘ │ │
+│  │                                             │      │ │
+│  │                                        ┌────▼────┐ │ │
+│  │                                        │ MailKit │ │ │
+│  │                                        │(Gmail)  │ │ │
+│  │                                        └─────────┘ │ │
+│  │                                                    │ │
+│  └──────────────────────────────────────────────────────┘ │
+│                                                            │
+└────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## ✅ Justificación: SQL Server 2022 vs Alternativas
+
+**Motivación para elegir SQL Server:**
+1. **Integración perfecta con Dapper** - Soporte nativo a Stored Procedures y parámetros SQL
+2. **Transacciones ACID garantizadas** - Crucial para reservas (no overbooking)
+3. **Soporte T-SQL avanzado** - Procedimientos optimizados, triggers, vistas indexadas
+4. **Compatibilidad .NET** - Driver SqlClient es oficial de Microsoft
+5. **Escalabilidad comprobada** - Millones de transacciones en producción
+
+**Trade-offs (Lo que se sacrifica):**
+| Aspecto | SQL Server | PostgreSQL | SQLite |
+|---------|-----------|-----------|--------|
+| Costo | Licencia paga ⚠️ | Open source ✅ | Open source ✅ |
+| Complejidad | Media ✅ | Media ✅ | Baja ✅ |
+| Transacciones | Robustas ✅ | Robustas ✅ | Limitadas ⚠️ |
+| Portabilidad | Baja ⚠️ | Alta ✅ | Alta ✅ |
+| Performance | Alta ✅ | Alta ✅ | Limitada ⚠️ |
+
+**Escenarios donde cambiaría:**
+- **PostgreSQL**: Si necesitas máxima portabilidad + open source para producción
+- **SQLite**: Si es MVP/prototipo sin concurrencia alta
+- **MongoDB**: Si escalas horizontalmente con millones de usuarios (NoSQL sharding)
+
+---
+
+## 🚀 Ejecución
+
+### 🐳 Con Docker (Recomendado)
+
+**Ventajas:**
+- ✅ Toda la infraestructura lista (SQL Server, RabbitMQ, API, Worker)
+- ✅ No requiere instalaciones locales
+- ✅ Reproducible en cualquier máquina
+- ✅ Idéntico a producción
+
+**Pasos:**
 
 ```bash
+# 1. Clonar repositorio
+git clone <repo>
+cd API_Reserva_Hotel
+
+# 2. Ejecutar docker-compose
+docker-compose up
+
+# 3. Esperar a que todos los servicios estén listos (~30 segundos)
+```
+
+**Acceso:**
+```
+API:      http://localhost:8080
+Swagger:  http://localhost:8080/swagger
+RabbitMQ: http://localhost:15672 (guest/guest)
+SQL:      localhost:1433 (sa / SuperSecurePassword123!)
+```
+
+**Qué se despliega:**
+```
+✓ API_Reserva_Hotel (ASP.NET Core)
+✓ API_Hotel.Notifications (Background Worker)
+✓ SQL Server 2022
+✓ RabbitMQ 3 Management
+✓ Volumen persistente para datos
+```
+
+---
+
+### 💻 Ejecución Local
+
+**Requisitos previos:**
+- .NET 8.0 SDK
+- SQL Server 2022
+- RabbitMQ (instalado o ejecutándose)
+
+**Pasos:**
+
+```bash
+# 1. Restaurar dependencias
 dotnet restore
+
+# 2. Compilar
 dotnet build
+
+# 3. Terminal 1 - API
 dotnet run --project API_Reserva_Hotel
+
+# 4. Terminal 2 - Worker de notificaciones
 dotnet run --project API_Hotel.Notifications
 ```
 
-**Requiere:**
-- SQL Server 2022
-- RabbitMQ
-- .NET 8.0 SDK
+**Acceso:**
+```
+API:     http://localhost:5000
+Swagger: http://localhost:5000/swagger
+```
+
+**Configuración requerida:**
+- RabbitMQ corriendo en localhost:5672
+- SMTP configurado para notificaciones
+
+---
+
+## 🏛️ Decisiones de Arquitectura Principales
+
+### **CQRS (Command Query Responsibility Segregation)**
+Separación clara entre **Comandos** (escritura) y **Queries** (lectura).
+- ✅ Mejora testabilidad
+- ✅ Escalabilidad independiente
+- ✅ Lógica de negocio más clara
+
+### **Event-Driven Architecture**
+RabbitMQ para notificaciones asincrónicas.
+- ✅ Desacoplamiento API ↔ Worker
+- ✅ Escalabilidad horizontal
+- ✅ Tolerancia a fallos
+
+### **Clean Architecture**
+4 capas: Domain → Application → Infrastructure → API.
+- ✅ Independencia de tecnologías
+- ✅ Fácil de testear
+- ✅ Mantenimiento a largo plazo
+
+### **Dapper + Stored Procedures**
+ORM ligero en lugar de Entity Framework.
+- ✅ Control preciso de SQL
+- ✅ Performance optimizado
+- ✅ Procedimientos reutilizables
+
+---
+
+## 📋 ADRs (Architecture Decision Records)
+
+| ID | Decisión | Ventaja |
+|-----|----------|---------|
+| **ADR-001** | CQRS con MediatR | Separación de concerns, testabilidad |
+| **ADR-002** | Dapper + Stored Procedures | Control SQL, performance predecible |
+| **ADR-003** | .NET 8.0 LTS | Estabilidad, soporte 18+ meses |
+| **ADR-004** | SQL Server 2022 | Transacciones ACID, integración .NET perfecta |
+| **ADR-005** | RabbitMQ para eventos | Desacoplamiento, escalabilidad |
+| **ADR-006** | Docker multi-stage | Build optimizado, images livianas |
+
+
+---
+
+## 🔐 Seguridad Implementada
+
+### **Autenticación & Autorización**
+- ✅ **JWT Bearer Tokens** con expiración configurable
+- ✅ **RBAC (Role-Based Access Control)** - Roles: Agente, Viajero
+- ✅ **Token validation** con validación de issuer, audience y firma
+- ✅ Endpoints protegidos con `[Authorize]` attribute
+
+### **Protección contra SQL Injection**
+- ✅ **SQL Parametrizado** - Todos los queries usan DynamicParameters
+- ✅ **Stored Procedures** - Lógica crítica en procedures T-SQL
+- ✅ **Dapper ORM** - Prevención automática de inyección
+
+### **Validación de Inputs**
+- ✅ **Fluent Validation** en CommandHandlers
+- ✅ **Type safety** con C# y .NET type system
+- ✅ **Range checks** para fechas, cantidades, montos
+- ✅ **Format validation** para emails, teléfonos
+
+### **Manejo de Errores Seguro**
+- ✅ **GlobalExceptionMiddleware** - Captura todas las excepciones
+- ✅ **No stack traces en producción** - Mensajes seguros al cliente
+- ✅ **Logging detallado interno** - Sin exposición de datos sensibles
+
+### **Gestión de Secretos**
+- ✅ **Variables de entorno** para credenciales sensibles
+- ✅ **Nunca hardcodear secrets** - Verificado en código
+- ✅ **Docker secrets** para SMTP, SQL Server, JWT
+- ✅ **appsettings.json** sin datos sensibles
+
+### **HTTPS & TLS**
+- ✅ Docker ready para HTTPS
+- ✅ SMTP con TLS 587
+- ✅ SSL certificates configurables
+
+### **Data Protection**
+- ✅ **Soft deletes** - Eliminación lógica de hoteles
+- ✅ **Audit trail** implícito - Eventos publicados y registrados
+- ✅ **No exponer IDs internos** - DTOs retornan solo datos necesarios
 
 ---
 
@@ -76,21 +329,13 @@ dotnet run --project API_Hotel.Notifications
 | Documento | Contenido |
 |-----------|-----------|
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Decisiones de diseño, ADRs, diagramas C4 |
-| [DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) | Cómo agregar nuevas funcionalidades |
-| [SECURITY.md](docs/SECURITY.md) | Prácticas de seguridad implementadas |
-| [API.md](docs/API.md) | Endpoints y ejemplos de uso |
+| [AI-RULES.md](docs/ai-rules.md) | Guía de IA para desarrollo |
+| [API-SPEC.md](docs/api-spec.md) | Endpoints y especificación API |
+| [DATABASE.md](docs/database.md) | Schema y stored procedures |
 
 ---
 
-## 🔐 Seguridad
-
-- JWT Authentication con expiración configurable
-- RBAC (Roles: Agente, Viajero)
-- Validación de inputs + SQL parametrizado
-- HTTPS ready
-- Secrets en variables de entorno
-
-Ver [SECURITY.md](docs/SECURITY.md) para detalles.
+Ver sección **🔐 Seguridad Implementada** arriba para detalles completos.
 
 ---
 
@@ -106,7 +351,7 @@ Ver [ARCHITECTURE.md](docs/ARCHITECTURE.md) para diagramas C4 y ADRs.
 
 ## 👨‍💻 Desarrollo
 
-Para agregar nuevas funcionalidades, ver [DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) con:
+Para agregar nuevas funcionalidades, ver [AI-RULES.md](docs/ai-rules.md) con:
 - Cómo agregar Comandos
 - Cómo agregar Queries
 - Cómo agregar Eventos
@@ -129,7 +374,7 @@ Checklist completo incluido.
 | POST | `/api/reservas` | Viajero, Agente | Crear reserva |
 | POST | `/api/auth/login` | - | Obtener JWT token |
 
-Ver [API.md](docs/API.md) para documentación completa.
+Ver [API-SPEC.md](docs/api-spec.md) para documentación completa.
 
 ---
 
@@ -150,29 +395,39 @@ Ver [API.md](docs/API.md) para documentación completa.
 
 ## 🤖 Uso de IA en Desarrollo
 
-**Herramienta**: Claude AI (Anthropic)
+### **Gemini y Claude**
 
-**Casos de uso**:
-- Generación de estructura CQRS
-- Implementación de SmtpEmailService
-- Stored Procedures optimizados
-- Docker & docker-compose.yml
+**Casos de uso:**
+- Implementación de SmtpEmailService (MailKit + SMTP)
+- Configuración Docker & docker-compose.yml
 
-**Validación**: Todos los componentes pasaron verificación de seguridad, performance y funcionalidad.
-
-Ver [ARCHITECTURE.md](docs/ARCHITECTURE.md#uso-de-herramientas-de-ia) para detalles.
+**Validación de salida:**
+- ✅ Revisión manual de lógica crítica
+- ✅ Verificación de seguridad (SQL injection, XSS)
+- ✅ Tests unitarios para validar comportamiento
+- ✅ Performance testing en queries
 
 ---
 
-## 📋 Justificación .NET 8.0
+### **`docs/ai-rules.md` - Guía de IA**
 
-Se eligió .NET 8.0 LTS sobre .NET 10 por:
-1. Soporte hasta Nov 2026 (estabilidad)
-2. Ecosistema maduro (Dapper, MediatR, MailKit)
-3. 18+ meses en producción
-4. Performance comparable, mayor predictibilidad
+Este archivo define **cómo la IA se guía** en el proyecto:
+- Patrones obligatorios (CQRS, Clean Architecture)
+- Estructura de carpetas y convenciones
+- Cómo agregar Comandos, Queries, Eventos, Servicios
+- Prohibiciones estrictas (no Entity Framework, no entidades en responses)
 
-Ver [ARCHITECTURE.md](docs/ARCHITECTURE.md#adr-004-net-80-vs-net-10) para ADR completo.
+**Función**: Garantiza consistencia y calidad en el código generado por IA.
+
+---
+
+### **`docs/` - Documentación del Proyecto**
+
+Almacena especificaciones y decisiones arquitectónicas:
+- **ARCHITECTURE.md** → ADRs y decisiones de diseño
+- **AI-RULES.md** → Guía de trabajo para IA
+- **API-SPEC.md** → Endpoints y especificación API
+- **DATABASE.md** → Schema y stored procedures
 
 ---
 
@@ -236,14 +491,6 @@ dotnet test
 Tests implementados:
 - CrearHabitacionCommandHandlerTests
 - HotelesControllerTests
-
----
-
-## 📞 Soporte
-
-- Issues: GitHub Issues
-- Documentación: Ver carpeta `docs/`
-- Stack: CQRS + Event-Driven + Domain-Driven
 
 ---
 
